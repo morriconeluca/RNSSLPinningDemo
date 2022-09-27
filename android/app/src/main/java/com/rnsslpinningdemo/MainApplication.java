@@ -8,6 +8,7 @@ import com.facebook.react.ReactInstanceManager;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.config.ReactFeatureFlags;
+import com.facebook.react.modules.network.OkHttpClientProvider;
 import com.facebook.soloader.SoLoader;
 import com.rnsslpinningdemo.newarchitecture.MainApplicationReactNativeHost;
 import java.lang.reflect.InvocationTargetException;
@@ -54,6 +55,20 @@ public class MainApplication extends Application implements ReactApplication {
     super.onCreate();
     // If you opted-in for the New Architecture, we enable the TurboModule system
     ReactFeatureFlags.useTurboModules = BuildConfig.IS_NEW_ARCHITECTURE_ENABLED;
+
+    // SSL PINNING FOR OLDER VERSION OF ANDROID:
+    // Provide a client factory to React Native's OkHttpClientProvider
+    // and it will use it instead of the default one,
+    // but only if android os version is older than Nougat.
+    // N.B. For Nougat and following versions of Android,
+    // the implementation of SSL pinning is made with network security config:
+    // android/app/src/main/res/xml/network_security_config.xml
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.N) {
+      OkHttpClientProvider.setOkHttpClientFactory(
+        new SSLPinnerFactory()
+      );
+    }
+
     SoLoader.init(this, /* native exopackage */ false);
     initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
   }
