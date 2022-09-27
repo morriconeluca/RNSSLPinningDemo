@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- For Nougat and following versions of Android, the implementation of SSL pinning is made with network security config. -->
+<!-- https://developers.redhat.com/blog/2017/10/26/android-spki-pinning-trustkit#pinning_in_android_n -->
+<!-- https://developer.android.com/training/articles/security-config#CertificatePinning -->
+<network-security-config>
+  <domain-config>
+    <domain includeSubdomains="true">typicode.com</domain>
+    <pin-set>
+      <!-- Run this in your terminal to get SubjectPublicKeyInfo (PIN SHA256): openssl s_client -servername typicode.com -connect typicode.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64 -->
+      <!-- Try a fake pin to check if SSL pinning implementation works: -->
+      <!-- AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= -->
+      <pin digest="SHA-256">F5yEJFlAhYki30l8i+NwYAdXTKE1+x/n9J41HHorqys=</pin>
+    </pin-set>
+  </domain-config>
+  <!-- Disable SSL pinning for localhost -->
+  <domain-config cleartextTrafficPermitted="true" enforcePinning="false">
+    <domain includeSubdomains="true">localhost</domain>
+  </domain-config>
+</network-security-config>
