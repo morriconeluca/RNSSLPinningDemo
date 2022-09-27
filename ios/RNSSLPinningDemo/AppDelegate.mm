@@ -6,6 +6,8 @@
 
 #import <React/RCTAppSetupUtils.h>
 
+#import <TrustKit/TrustKit.h>
+
 #if RCT_NEW_ARCH_ENABLED
 #import <React/CoreModulesPlugins.h>
 #import <React/RCTCxxBridgeDelegate.h>
@@ -31,6 +33,32 @@ static NSString *const kRNConcurrentRoot = @"concurrentRoot";
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  // iOS implementation of SSL pinning with TrustKit
+  // https://github.com/datatheorem/TrustKit
+  // Run this in your terminal to get SubjectPublicKeyInfo (PIN SHA256):
+  // openssl s_client -servername typicode.com -connect typicode.com:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+  // Try a fake pin to check if SSL pinning implementation works:
+  // AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+  NSDictionary *trustKitConfig =
+  @{
+    // Swizzling because we can't access the NSURLSession instance
+    // used in React Native's fetch method
+    kTSKSwizzleNetworkDelegates: @YES,
+    kTSKPinnedDomains: @{
+        @"typicode.com" : @{
+            kTSKIncludeSubdomains: @YES,
+            kTSKEnforcePinning: @YES,
+            kTSKDisableDefaultReportUri: @YES,
+            kTSKPublicKeyHashes : @[
+              @"F5yEJFlAhYki30l8i+NwYAdXTKE1+x/n9J41HHorqys=",
+              // Fake backup key but we need to provide 2 pins
+              // otherwise the app crashes
+              @"BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=",
+            ],
+        },
+    }};
+  [TrustKit initSharedInstanceWithConfiguration:trustKitConfig];
+
   RCTAppSetupPrepareApp(application);
 
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
